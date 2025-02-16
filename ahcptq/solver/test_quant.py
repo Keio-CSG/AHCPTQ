@@ -353,7 +353,7 @@ def main():
             if hasattr(q_config, 'recon'):
                 if rank == 0:
                     logger.info('begin to do reconstruction')
-                recon_model(model, fp_model, cali_data, q_config.recon, q_config.framework_name, brecq=brecq)
+                recon_model(model, fp_model, cali_data, q_config.recon, q_config.ahcptq, brecq=brecq)
             
             enable_quantization(model)
 
@@ -429,12 +429,12 @@ def main():
 
 def quantize_model(model, config_quant, args):
     # , config_quant.ahcptq
-    def replace_module(module, w_qconfig, a_qconfig, framework_name_config, ptq4sam_config, qoutput=True):
+    def replace_module(module, w_qconfig, a_qconfig, ahcptq_config, ptq4sam_config, qoutput=True):
         for name, child_module in module.named_children():
             if 'patch_embed' in name or 'output_upscaling' in name or 'iou_prediction_head' in name or 'output_hypernetworks_mlps' in name:
                 continue
             if type(child_module) in specials:
-                setattr(module, name, specials[type(child_module)](child_module, w_qconfig, a_qconfig, framework_name_config, ptq4sam_config))
+                setattr(module, name, specials[type(child_module)](child_module, w_qconfig, a_qconfig, ahcptq_config, ptq4sam_config))
             elif isinstance(child_module, (nn.Conv2d, nn.Linear)):
                 setattr(module, name, QuantizedLayer(child_module, None, w_qconfig, a_qconfig, qoutput))
                 prev_quantmodule = getattr(module, name)
@@ -447,11 +447,11 @@ def quantize_model(model, config_quant, args):
             elif isinstance(child_module, nn.Identity):
                 pass
             else:
-                replace_module(child_module, w_qconfig, a_qconfig, framework_name_config, ptq4sam_config, qoutput)
+                replace_module(child_module, w_qconfig, a_qconfig, ahcptq_config, ptq4sam_config, qoutput)
     if args.quant_encoder:
         model.predictor.model.image_encoder = specials[type(model.predictor.model.image_encoder)](model.predictor.model.image_encoder, config_quant.w_qconfig, config_quant.a_qconfig, config_quant.ahcptq, config_quant.ptq4sam)
 
-    replace_module(model.predictor.model.mask_decoder, config_quant.w_qconfig, config_quant.a_qconfig, config_quant.framework_name, config_quant.ptq4sam)
+    replace_module(model.predictor.model.mask_decoder, config_quant.w_qconfig, config_quant.a_qconfig, config_quant.ahcptq, config_quant.ptq4sam)
     'set first layer\'s weight to 8-bit'
     w_list, a_list = [], []
     for name, module in model.named_modules():
@@ -493,7 +493,7 @@ def calibrate(model, cali_data, BIG):
         logger.info('the calibration time is {}'.format(ed - st))
 
 
-def recon_model(model, fp_model, cali_data, recon_config, framework_name_config, brecq=False):
+def recon_model(model, fp_model, cali_data, recon_config, ahcptq_config, brecq=False):
     if len(cali_data) > 16:
         recon_config.keep_gpu = False
     
@@ -506,7 +506,7 @@ def recon_model(model, fp_model, cali_data, recon_config, framework_name_config,
         for name, child_module in module.named_children():
             if isinstance(child_module, (QuantizedLayer, QuantizedBlock, PreQuantizedLayer, QuantizedMatMul)):
                 logger.info('begin reconstruction for module:\n{}'.format(str(child_module)))
-                reconstruction(model, fp_model, child_module, getattr(fp_module, name), cali_data, recon_config, framework_name_config)
+                reconstruction(model, fp_model, child_module, getattr(fp_module, name), cali_data, recon_config, ahcptq_config)
             else:
                 _recon_model(child_module, getattr(fp_module, name))
     # Start reconstruction
