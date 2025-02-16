@@ -365,7 +365,7 @@ class QuantImageEncoderOurViT(nn.Module):
         return x
 
 class QunatEncoderOurBlock(nn.Module):
-    def __init__(self, org_module: Block, w_qconfig, a_qconfig, ptq4sam_config, ahcptq_config, qoutput=True ) -> None:
+    def __init__(self, org_module: Block, w_qconfig, a_qconfig, ahcptq_config, ptq4sam_config, qoutput=True ) -> None:
         super().__init__()
         self.norm1 = org_module.norm1
         self.attn = QuantEncoderOurAttentionBlock(org_module.attn, w_qconfig, a_qconfig, ahcptq_config, ptq4sam_config)
