@@ -332,9 +332,9 @@ def main():
             logger.info('quant encoder')
             logger.info(args.quant_encoder)
             logger.info('cag')
-            logger.info(q_config.framework_name.cag)
+            logger.info(q_config.ahcptq.cag)
             logger.info('hluq')
-            logger.info(q_config.framework_name.hluq)
+            logger.info(q_config.ahcptq.hluq)
             logger.info('do sign')
             logger.info(q_config.ptq4sam.BIG)
             logger.info('do log_quant')
@@ -449,7 +449,7 @@ def quantize_model(model, config_quant, args):
             else:
                 replace_module(child_module, w_qconfig, a_qconfig, framework_name_config, ptq4sam_config, qoutput)
     if args.quant_encoder:
-        model.predictor.model.image_encoder = specials[type(model.predictor.model.image_encoder)](model.predictor.model.image_encoder, config_quant.w_qconfig, config_quant.a_qconfig, config_quant.framework_name, config_quant.ptq4sam)
+        model.predictor.model.image_encoder = specials[type(model.predictor.model.image_encoder)](model.predictor.model.image_encoder, config_quant.w_qconfig, config_quant.a_qconfig, config_quant.ahcptq, config_quant.ptq4sam)
 
     replace_module(model.predictor.model.mask_decoder, config_quant.w_qconfig, config_quant.a_qconfig, config_quant.framework_name, config_quant.ptq4sam)
     'set first layer\'s weight to 8-bit'
