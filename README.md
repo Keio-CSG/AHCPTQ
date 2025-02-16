@@ -7,7 +7,7 @@
 We follow the environment settings of [PTQ4SAM](https://github.com/chengtao-lv/PTQ4SAM), please refer to the ``environment.sh`` in the root directory.
 1. Install PyTorch
 ```
-conda create -n ptq4sam python=3.7 -y
+conda create -n ahcptq python=3.7 -y
 pip install torch torchvision
 ```
 
