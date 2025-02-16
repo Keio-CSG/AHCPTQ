@@ -100,13 +100,13 @@ class QuantMLPBlock(QuantizedBlock):
 
 
 class QuantEncoderMLPBlock(QuantizedBlock):
-    def __init__(self, org_module: MLPBlock, w_qconfig, a_qconfig, framework_name_config, qinput=True):
+    def __init__(self, org_module: MLPBlock, w_qconfig, a_qconfig, ahcptq_config, qinput=True):
         super().__init__()
-        if framework_name_config.cag:
+        if ahcptq_config.cag:
             lin1_type = 'group'
         else:
             lin1_type = 'normal'
-        if framework_name_config.hluq:
+        if ahcptq_config.hluq:
             lin2_type = 'hybrid'
         else:
             lin2_type = 'normal'
@@ -119,13 +119,13 @@ class QuantEncoderMLPBlock(QuantizedBlock):
 
 
 class QuantDecoderMLPBlock(QuantizedBlock):
-    def __init__(self, org_module: MLPBlock, w_qconfig, a_qconfig, framework_name_config, qinput=True):
+    def __init__(self, org_module: MLPBlock, w_qconfig, a_qconfig, ahcptq_config, qinput=True):
         super().__init__()
-        if framework_name_config.cag:
+        if ahcptq_config.cag:
             lin1_type = 'group'
         else:
             lin1_type = 'normal'
-        if framework_name_config.hluq:
+        if ahcptq_config.hluq:
             lin2_type = 'hybrid'
         else:
             lin2_type = 'normal'
@@ -195,22 +195,22 @@ class QuantImageEncoderViT(nn.Module):
 
 class QuantDecoderOurTwoWayAttentionBlock(nn.Module):
     
-    def __init__(self, org_module: TwoWayAttentionBlock, w_qconfig, a_qconfig, framework_name_config, ptq4sam_config, qoutput=True ) -> None:
+    def __init__(self, org_module: TwoWayAttentionBlock, w_qconfig, a_qconfig, ahcptq_config, ptq4sam_config, qoutput=True ) -> None:
         super().__init__()
-        self.self_attn = QuantDecoderOurAttentionBlock(org_module.self_attn, w_qconfig, a_qconfig, framework_name_config, ptq4sam_config, qinput=True)
+        self.self_attn = QuantDecoderOurAttentionBlock(org_module.self_attn, w_qconfig, a_qconfig, ahcptq_config, ptq4sam_config, qinput=True)
         self.norm1 = org_module.norm1
 
         self.cross_attn_token_to_image = QuantDecoderOurAttentionBlock(
-            org_module.cross_attn_token_to_image, w_qconfig, a_qconfig, framework_name_config, ptq4sam_config, qinput=True
+            org_module.cross_attn_token_to_image, w_qconfig, a_qconfig, ahcptq_config, ptq4sam_config, qinput=True
         )
         self.norm2 = org_module.norm2
 
-        self.mlp = QuantDecoderMLPBlock(org_module.mlp, w_qconfig, a_qconfig, framework_name_config, qinput=True)
+        self.mlp = QuantDecoderMLPBlock(org_module.mlp, w_qconfig, a_qconfig, ahcptq_config, qinput=True)
         self.norm3 = org_module.norm3
 
         self.norm4 = org_module.norm4
         self.cross_attn_image_to_token = QuantDecoderOurAttentionBlock(
-            org_module.cross_attn_image_to_token, w_qconfig, a_qconfig, framework_name_config, ptq4sam_config, qinput=True
+            org_module.cross_attn_image_to_token, w_qconfig, a_qconfig, ahcptq_config, ptq4sam_config, qinput=True
         )
 
         self.skip_first_layer_pe = org_module.skip_first_layer_pe
@@ -251,14 +251,14 @@ class QuantDecoderOurTwoWayAttentionBlock(nn.Module):
 
 
 class QuantDecoderOurAttentionBlock(QuantizedBlock):
-    def __init__(self, org_module: DecoderAttention, w_qconfig, a_qconfig, framework_name_config, ptq4sam_config, qoutput=True, qinput=False):
+    def __init__(self, org_module: DecoderAttention, w_qconfig, a_qconfig, ahcptq_config, ptq4sam_config, qoutput=True, qinput=False):
         super().__init__()
         self.qoutput = qoutput
         self.embedding_dim = org_module.embedding_dim
         self.internal_dim = org_module.internal_dim
         self.num_heads = org_module.num_heads
 
-        if framework_name_config.cag:
+        if ahcptq_config.cag:
             proj_type = 'group'
         else:
             proj_type = 'normal'
@@ -339,7 +339,7 @@ class QuantDecoderOurAttentionBlock(QuantizedBlock):
 
 class QuantImageEncoderOurViT(nn.Module):
     
-    def __init__(self, org_module: ImageEncoderViT, w_qconfig, a_qconfig, framework_name_config, ptq4sam_config, qoutput=True ) -> None:
+    def __init__(self, org_module: ImageEncoderViT, w_qconfig, a_qconfig, ahcptq_config, ptq4sam_config, qoutput=True ) -> None:
         super().__init__()
         self.img_size = org_module.img_size
         self.patch_embed = org_module.patch_embed
@@ -348,7 +348,7 @@ class QuantImageEncoderOurViT(nn.Module):
         
         self.blocks = nn.ModuleList()
         for i in range(len(org_module.blocks)):
-            self.blocks.append(QunatEncoderOurBlock(org_module.blocks[i], w_qconfig, a_qconfig, framework_name_config, ptq4sam_config))
+            self.blocks.append(QunatEncoderOurBlock(org_module.blocks[i], w_qconfig, a_qconfig, ahcptq_config, ptq4sam_config))
 
         self.neck = QuantNeck(org_module.neck, w_qconfig, a_qconfig)
     
@@ -365,13 +365,13 @@ class QuantImageEncoderOurViT(nn.Module):
         return x
 
 class QunatEncoderOurBlock(nn.Module):
-    def __init__(self, org_module: Block, w_qconfig, a_qconfig, ptq4sam_config, framework_name_config, qoutput=True ) -> None:
+    def __init__(self, org_module: Block, w_qconfig, a_qconfig, ptq4sam_config, ahcptq_config, qoutput=True ) -> None:
         super().__init__()
         self.norm1 = org_module.norm1
-        self.attn = QuantEncoderOurAttentionBlock(org_module.attn, w_qconfig, a_qconfig, framework_name_config, ptq4sam_config)
+        self.attn = QuantEncoderOurAttentionBlock(org_module.attn, w_qconfig, a_qconfig, ahcptq_config, ptq4sam_config)
         # print(self.attn)
         self.norm2 = org_module.norm2
-        self.mlp = QuantEncoderMLPBlock(org_module.mlp, w_qconfig, a_qconfig, framework_name_config)
+        self.mlp = QuantEncoderMLPBlock(org_module.mlp, w_qconfig, a_qconfig, ahcptq_config)
 
         self.window_size = org_module.window_size
     
@@ -394,14 +394,14 @@ class QunatEncoderOurBlock(nn.Module):
         return x
 
 class QuantEncoderOurAttentionBlock(QuantizedBlock):
-    def __init__(self, org_module: EncoderAttention, w_qconfig, a_qconfig, framework_name_config, ptq4sam_config, qoutput=False, qinput=True):
+    def __init__(self, org_module: EncoderAttention, w_qconfig, a_qconfig, ahcptq_config, ptq4sam_config, qoutput=False, qinput=True):
         super().__init__()
         self.qinput = qinput
         self.qoutput = qoutput
         self.num_heads = org_module.num_heads
         self.scale = org_module.scale
 
-        if framework_name_config.cag:
+        if ahcptq_config.cag:
             proj_type = 'group'
         else:
             proj_type = 'normal'
