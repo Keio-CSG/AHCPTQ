@@ -133,7 +133,7 @@ def lp_loss(pred, tgt, p=2.0):
     return (pred - tgt).abs().pow(p).sum(1).mean()
 
 
-def reconstruction(model, fp_model, module, fp_module, cali_data, config, framework_name_config):
+def reconstruction(model, fp_model, module, fp_module, cali_data, config, ahcptq_config):
     device = next(module.parameters()).device
     # get data first
     quant_inp, _ = save_inp_oup_data(model, module, cali_data, store_inp=True, store_oup=False, bs=config.batch_size, keep_gpu=config.keep_gpu)
@@ -333,18 +333,18 @@ def reconstruction(model, fp_model, module, fp_module, cali_data, config, framew
             a_opt.step()
             a_scheduler.step()
 
-        if framework_name_config.cag:
+        if ahcptq_config.cag:
             contains_group_lsq = any(isinstance(sub_module, GroupLSQFakeQuantize) for sub_module in module.modules())
             if contains_group_lsq:
                 if i in [int(config.iters * 0.2), int(config.iters * 0.4), int(config.iters * 0.6), int(config.iters * 0.8)]:
                     if i == int(config.iters * 0.2):
-                        a_opt, a_scheduler = group_channel(module, a_para, config, num_channel=framework_name_config.group*8)
+                        a_opt, a_scheduler = group_channel(module, a_para, config, num_channel=ahcptq_config.group*8)
                     if i == int(config.iters * 0.4):
-                        a_opt, a_scheduler = group_channel(module, a_para, config, num_channel=framework_name_config.group*4)
+                        a_opt, a_scheduler = group_channel(module, a_para, config, num_channel=ahcptq_config.group*4)
                     if i == int(config.iters * 0.6):
-                        a_opt, a_scheduler = group_channel(module, a_para, config, num_channel=framework_name_config.group*2)
+                        a_opt, a_scheduler = group_channel(module, a_para, config, num_channel=ahcptq_config.group*2)
                     if i == int(config.iters * 0.8):
-                        a_opt, a_scheduler = group_channel(module, a_para, config, num_channel=framework_name_config.group)
+                        a_opt, a_scheduler = group_channel(module, a_para, config, num_channel=ahcptq_config.group)
     
     del fp_inp,fp_oup,quant_inp,cur_fp_oup
     torch.cuda.empty_cache()
