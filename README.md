@@ -106,7 +106,7 @@ for n, m in model.named_modules():
         m.drop_prob = 1
 ```
 
-Update on July 9th
+**Update on July 9th**
 
 We believe the last sentence in `recon.py` only reset probability of 'post_act_fake_quantize' quantizers and thus cause this issue. We encourage the following research to further fix this error in their experiments.
 
