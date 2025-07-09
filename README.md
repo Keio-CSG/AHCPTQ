@@ -106,15 +106,24 @@ for n, m in model.named_modules():
         m.drop_prob = 1
 ```
 
+Update on July 9th
+
+We believe the last sentence in `recon.py` only reset probability of 'post_act_fake_quantize' quantizers and thus cause this issue. We encourage the following research to further fix this error in their experiments.
+
+```
+if isinstance(layer, QuantizeBase) and 'post_act_fake_quantize' in name:
+    layer.drop_prob = 1.0
+```
+
 ## Citation
 
 If you find this repo is useful, please cite our paper. Thanks.
 
 ```bibtex
-@article{AHCPTQ,
+@article{zhang2025ahcptq,
   title={AHCPTQ: Accurate and Hardware-Compatible Post-Training Quantization for Segment Anything Model},
-  author={Zhang, Wenlun, and Z., Y. and Ando, Shimpei and Yoshioka, Kentaro},
-  journal={arXiv:XXXX.XXXXX},
+  author={Zhang, Wenlun and Zhong, Yunshan and Ando, Shimpei and Yoshioka, Kentaro},
+  journal={arXiv preprint arXiv:2503.03088},
   year={2025}
 }
 ```
